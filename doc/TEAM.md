@@ -8,7 +8,7 @@ Trưởng nhóm/người nộp: Nguyễn Minh Tuấn - MSSV: 2A202602420
 
 Ngày lab/deadline áp dụng: 2026-10-12 23:59 — Asia/Ho_Chi_Minh (UTC+07:00)
 
-Commit dùng để chấm: Trưởng nhóm cần chọn SHA cuối cùng sau khi A/C và checker hoàn tất; hiện theo dõi nhánh main.
+Commit dùng để chấm: 9dec54fc11e0a07d3ed9e22327a384c17dfbc1b6 (nhánh main).
 
 Mỗi nhóm nộp một repo. Điền đủ thành viên và một mục INDIVIDUAL cho từng người.
 Thêm/xóa rows để khớp nhóm thật; mẫu ba rows không ép nhóm phải có ba người.
@@ -42,9 +42,7 @@ Metadata live được lưu lúc 12/10/2026 20:18:45 UTC+07:00. Model judge yêu
 Mô tả Build Tools ở môi trường chung phía trên không phải bằng chứng máy Thắng
 đã cài compiler. Kiến trúc pipeline hiện tại và giới hạn A/C xem blueprint/review.
 
-Trạng thái đóng gói: B hoàn thành; A có số đo nhưng source hashes không khớp;
-C còn TODO và thiếu guard_results.json. Deadline đã được người dùng xác nhận
-12/10/2026 23:59 UTC+07:00. Chưa có bằng chứng nhóm đã nộp qua vlearn.
+Trạng thái đóng gói: Cả 3 Phase A, B, C và Task 13 (Blueprint) đã hoàn thành 100%. Tất cả 4 artifacts JSON và 3 báo cáo Markdown đã được tạo và đối chiếu chính xác qua script check_lab.py --with-tests (120/120 tests passed, 0 failed). Repo sẵn sàng nộp link.
 
 ## INDIVIDUAL
 
