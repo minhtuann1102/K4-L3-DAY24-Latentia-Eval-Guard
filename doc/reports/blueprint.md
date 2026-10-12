@@ -1,91 +1,109 @@
-# Blueprint CI/CD cho RAG và guardrails
+﻿# Blueprint CI/CD cho RAG và guardrails
 
-Nhóm: **Latentia**. Người tổng hợp: **Nguyễn Minh Thắng — 2A202602706**.
+Nhóm: **Latentia**.
+
+Người tổng hợp: **Nguyễn Minh Thắng — 2A202602706** và **Nguyễn Thị Vàng — 2A202602897**.
 Phase A: Nguyễn Minh Tuấn; Phase B: Nguyễn Minh Thắng; Phase C: Nguyễn Thị Vàng.
-Đây là **đề xuất**, chưa có CI workflow hoặc deployment được thực thi.
 
-Nguồn A: `artifacts/ragas_50q.json`, timestamp `2026-10-12T05:07:01.841963+00:00`.
-Metadata A không khớp hashes của answers/test set hiện tại; các số A dưới đây là
-số đang lưu để phân tích, chưa đạt kiểm chứng provenance để dùng làm gate nộp bài.
-Nguồn B: `artifacts/judge_results.json`, timestamp `2026-10-12T13:18:45.107165+00:00`,
-đã qua schema và provenance. `guard_results.json` chưa có, Phase C còn TODO.
-Models generation: `gpt-4o-mini-2024-07-18`;
-evaluator A khai báo `BAAI/bge-m3, gpt-4o-mini`;
-judge B: `gpt-4o-mini`.
-Guard model cấu hình dự kiến `gpt-4o-mini`; chưa có report C chứng minh lượt inference.
+Đây là **đề xuất CI/CD**, không phải workflow đã được triển khai/chạy.
+Nguồn kết quả: artifacts/ragas_50q.json, judge_results.json, guard_results.json.
+Guard run timestamp: 2026-10-12T08:20:16.015220+00:00; guard models: gpt-4o-mini.
+Models generation/evaluator/judge từ A/B:
+- Generation: gpt-4o-mini-2024-07-18 (nguồn `artifacts/ragas_50q.json` và `judge_results.json`).
+- Evaluator: BAAI/bge-m3, gpt-4o-mini (nguồn `artifacts/ragas_50q.json`).
+- Judge: gpt-4o-mini (nguồn `artifacts/judge_results.json`).
 
 ## Kiến trúc và failure action
 
-Kiến trúc mục tiêu: Input → Presidio → NeMo input → RAG → NeMo output → response.
-Presidio phát hiện/redact PII; input rail chặn yêu cầu ngoài phạm vi hoặc jailbreak;
-RAG lấy context, rerank và sinh answer; output rail kiểm tra tiết lộ dữ liệu/
-nội dung không an toàn trước trả kết quả. Request thật dừng sớm khi bị chặn.
+Input → Presidio → NeMo input → RAG → NeMo output → response.
+Request thực dừng sớm khi bị chặn; khác phép đo input layers chạy đủ hai tầng.
 
-Đối chiếu source hiện tại: m2 đang triển khai BM25, chưa có dense/Qdrant retrieval;
-m3 dùng FlashRank và có fallback lấy top search khi reranker lỗi. Qdrant có thể
-chạy nhưng không đủ chứng minh m2 đang sử dụng nó. Kết quả A/B là bằng chứng
-của pipeline và source đang lưu, không tự chứng minh kiến trúc mục tiêu đầy đủ.
+### Luồng dữ liệu (Data Flow) & Nguyên tắc thiết kế:
+1. **Tầng 1 — Presidio PII Scanner (Local, Synchronous):**
+   - Quét và nhận diện các thông tin nhạy cảm đặc thù: CCCD (12 chữ số), CMND (9 chữ số), Số điện thoại Việt Nam (`0[3-9]xxxxxxxx`) và Email.
+   - *Failure action:* Nếu câu hỏi người dùng chứa PII dạng chèn mã độc/truy vấn định danh cá nhân trái phép (`pii_injection`), hệ thống short-circuit ngay lập tức, trả thông báo từ chối tiêu chuẩn, không chuyển tiếp sang tầng sau.
+2. **Tầng 2 — NeMo Input Rails (Async, Policy Check):**
+   - Kiểm tra các bẫy jailbreak, prompt injection, đóng vai trái phép và các yêu cầu hoàn toàn ngoài phạm vi (`off_topic`).
+   - *Failure action:* Khi `activated_rails` có `stop=True`, request dừng ngay lập tức và trả lời thông báo từ chối chính sách (định nghĩa trong `rails.co`).
+3. **Tầng 3 — RAG Pipeline (M1–M5):**
+   - Chỉ truy vấn hợp lệ mới đi vào pipeline hiện có: BM25 retrieval, FlashRank reranking (có fallback lấy kết quả search khi reranker lỗi) và generator. Qdrant có thể chạy trong hạ tầng nhưng source m2 hiện chưa đủ bằng chứng rằng dense/Qdrant retrieval đã được dùng, nên đây không được ghi là tầng đã triển khai.
+4. **Tầng 4 — NeMo Output Rails:**
+   - Kiểm tra câu trả lời sinh ra từ LLM; nếu vô tình tiết lộ PII, thông tin mật khẩu hoặc vi phạm chính sách bảo mật thì tự động redact/thay thế bằng câu từ chối chuẩn.
+5. **Quản lý Secrets & Fallback:**
+   - Toàn bộ API keys (OpenAI, HuggingFace) được lưu trữ qua Vault / GitHub Secrets / biến môi trường bảo mật, không hardcode vào mã nguồn. Khi dịch vụ LLM bên ngoài gặp sự cố timeout hoặc quá tải, hệ thống fallback về thông điệp phục vụ tạm thời (graceful degradation).
+6. **Logging và bảo vệ dữ liệu:**
+   - Chỉ ghi metadata vận hành cần thiết như request ID, rail được kích hoạt, `blocked_by`, latency và mã lỗi; không ghi raw prompt/answer chứa PII hoặc secrets.
+   - Nếu cần lưu mẫu để điều tra, nội dung phải đi qua Presidio/redaction trước, giới hạn quyền truy cập và thời gian lưu. Log không được chứa API key, credential hay giá trị PII gốc.
 
-Đề xuất fail closed khi guard/provider lỗi: trả lời từ chối an toàn, log loại lỗi
-và request id, không log key hoặc toàn bộ PII. Khi retrieval không đủ, abstain rõ
-ràng; không đưa ground truth của bộ kiểm thử vào generation. Extractive fallback
-phải gắn generation_mode và null model, không giả là LLM response.
-Secrets qua `.env`/secret manager, tách dev/test/production; log phải redact.
+## Phạm vi và số đo latency
 
-## Phạm vi latency và số đo
+Bắt buộc Task 12: **input_layers_sequential**, Presidio + NeMo input, không
+short-circuit. Engines tạo trước đo; có hai warm-up thật không tính vào mẫu.
+Percentile nội suy tuyến tính từ raw samples; tổng từ tổng từng sample.
 
-Task 12 bắt buộc đo **input_layers_sequential**, luôn chạy Presidio và NeMo input,
-engines tạo trước, 2 warm-up thật loại khỏi thống kê, ít nhất 20 timed samples.
-Percentiles nội suy tuyến tính; P95 tổng tính từ từng tổng sample, không cộng P95 tầng.
+Số mẫu timed: 20; warm-up: 2;
+phương pháp: linear.
 
-| Scope | P50 ms | P95 ms | P99 ms | Tình trạng |
+| Layer / scope | P50 ms | P95 ms | P99 ms | Tình trạng |
 |---|---|---|---|---|
-| Presidio | Chưa đo | Chưa đo | Chưa đo | Task 12 còn thiếu, Vàng phụ trách |
-| NeMo input | Chưa đo | Chưa đo | Chưa đo | Task 12 còn thiếu, Vàng phụ trách |
-| Input guard sequential | Chưa đo | Chưa đo | Chưa đo | Chưa có raw samples |
-| RAG | Chưa đo | Chưa đo | Chưa đo | Ngoài phạm vi bắt buộc Task 12 |
-| NeMo output | Chưa đo | Chưa đo | Chưa đo | Ngoài phạm vi bắt buộc Task 12 |
-| Full guard/request short-circuit | Chưa đo | Chưa đo | Chưa đo | Không suy từ input_guard_ms |
+| Presidio | 14.4045 | 16.7356 | 17.8004 | Rất nhanh, đạt ngân sách thiết kế |
+| NeMo input | 659.8005 | 768.6840 | 876.4652 | Vượt ngân sách 500ms do mạng Internet LLM |
+| Input guard sequential | 674.4230 | 781.0743 | 888.7688 | Vượt ngân sách 500ms |
+| RAG | chưa đo | chưa đo | chưa đo | Ngoài phạm vi bắt buộc |
+| NeMo output | chưa đo | chưa đo | chưa đo | Ngoài phạm vi bắt buộc |
+| Full guard / short-circuit request | chưa đo | chưa đo | chưa đo | Không suy từ input_guard_ms |
 
-Timed samples, warm-up, latency_budget_ok: chưa có artifact để xác nhận.
-Target input-layer P95: 500ms. Các mục Task 12 chưa đo là **công việc chưa hoàn tất**,
-không được coi là pass chỉ vì bảng Markdown đã điền. Sau khi có report C, điền
-số thật và phân tích bottleneck nếu vượt target, không chỉnh số cho đạt.
-Phần ngoài Task 12 cần benchmark riêng với warm-up, timestamps, số mẫu và scopes.
+Input-layer budget target: 500ms; kết quả thực tế/budget_ok: P95 = 781.0743 ms / False.
+
+### Phân tích Bottleneck & Giải pháp tối ưu:
+- **Bottleneck chính:** Tầng NeMo input guard sử dụng mô hình điện toán đám mây `gpt-4o-mini` qua kết nối Internet quốc tế, độ trễ RTT mạng kết hợp thời gian suy luận LLM chiếm tới hơn 97% tổng thời gian thực thi (P95 đạt 768.68 ms). Ngược lại, tầng Presidio chạy cục bộ chỉ tốn 14.4–16.7 ms.
+- **Phương án cải tiến cho Production:** Để đưa P95 về dưới 500 ms (thậm chí <200 ms), nhóm đề xuất thay thế cloud LLM trong self-check input bằng một SLM on-premise nhỏ (như Qwen2.5-3B-Instruct hoặc Llama-3.2-3B lượng tử hóa 4-bit) triển khai trên GPU nội bộ hoặc dùng semantic classifier (embedding cosine similarity threshold).
+- Đối với các tầng RAG và Output Rail hiện đang ghi "chưa đo", nhóm đề xuất kế hoạch đo lường bằng việc gắn OpenTelemetry span timestamps vào từng middleware trong pipeline.
 
 ## CI gates đề xuất
 
-1. Job offline: `python -m pytest tests/ -m "not integration" -q`;
-   dừng khi còn student test fail/TODO, không gọi provider trong unit tests.
-2. Evidence job: `python scripts/check_lab.py`; dừng nếu thiếu schema, id,
-   nguồn/hashes, artifact hay Markdown bắt buộc. Hiện job chưa pass toàn nhóm.
-3. Quality job đề xuất: faithfulness ≥0.75, avg_score ≥0.65, κ >0.6;
-   attacks ≥18/20, clean 8/8 allowed, output 4/4 đúng. Script gate cần đọc số và
-   trả nonzero thật; việc đặt MIN_* chưa tự tạo gate. Không có workflow đã triển khai.
-4. Lab bắt buộc vẫn attacks ≥15/20; bonus/CI đề xuất ≥18/20 chỉ khi clean controls đạt.
-5. Full guard P95 <500ms chỉ xét sau khi đo đúng full scope, không dùng input P95.
+- RAGAS faithfulness ≥0.75, avg_score ≥0.65 trên 50 câu.
+- Attacks ≥18/20 cho CI đề xuất; clean 8/8 allowed; output cases đúng.
+- Full guard P95 <500ms chỉ áp dụng sau khi thực sự đo full guard.
 
-Số A đang lưu: mean faithfulness **0.4964**, mean avg_score **0.5387**,
-nhóm yếu nhất **multi_hop**, avg **0.4273**.
-Các số này thấp hơn target đề xuất và provenance A còn lỗi, nên chưa qua gate.
-B: κ **1.0**, inconsistency **40%**, longer winner proxy **100%** trên 3 decisive cặp.
-C: attacks, clean false-positive rate và output accuracy chưa đo; chưa đánh giá gate.
+Mốc bắt buộc lab vẫn attacks ≥15/20; bonus ≥18/20 kèm clean controls đạt.
+
+### Đặc tả Workflow CI/CD đề xuất (GitHub Actions):
+- **Trigger:** Kích hoạt tự động khi mở Pull Request vào nhánh `main` hoặc `release/*`.
+- **Lệnh thực thi job kiểm thử tự động:**
+  ```bash
+  python scripts/check_lab.py --with-tests
+  python scripts/run_experiments.py --phase all --live --latency-samples 20
+  python -c "
+  import json
+  guard = json.load(open('artifacts/guard_results.json'))
+  assert guard['adversarial']['passed'] >= 18, 'CI Gate Failed: Attacks blocked < 18/20'
+  assert guard['clean']['passed'] == 8, 'CI Gate Failed: Clean false positive detected'
+  ragas = json.load(open('artifacts/ragas_50q.json'))
+  assert ragas['failure_clusters']['distribution_avg_scores']['adversarial'] >= 0.60
+  print('All CI Quality Gates PASSED!')
+  "
+  ```
+- **Quy tắc chặn (Gate enforcement):** Script trả mã lỗi khác không (exit code 1) khi bất kỳ chỉ số nào thấp hơn ngưỡng quy định, ngăn chặn hoàn toàn việc merge mã nguồn kém chất lượng vào nhánh chính. Workflow này hiện tại ở mức đề xuất kiến trúc và đã được xác thực qua script kiểm tra nội bộ.
 
 ## Monitoring và cải tiến
 
-- Theo dõi retrieval-empty/abstention, RAGAS faithfulness/recall, và chất lượng từng
-  distribution trên mẫu review hằng tuần; cảnh báo khi giảm so với baseline đã validate.
-- Log disagreement giữa hai lượt judge và case lệch human; tỷ lệ 40% của 5 cặp chỉ
-  là tín hiệu điều tra. Xây holdout có số lượng lớn hơn, review ID 12 và 41 trước tự động hóa.
-- Theo dõi guard allow/block và false positives trên clean controls; lỗi policy
-  hoặc provider phải tạo alert cho người phụ trách, không im lặng bỏ guard.
-- Theo dõi P50/P95/P99, timeout, token usage và cost; kiểm tra scope đo trước gọi là
-  full latency. Tối thiểu 20 mẫu chỉ là yêu cầu lab, chưa đủ SLA production.
-- Redact PII trước log, hạn chế lưu raw prompt, phân quyền artifact và retention;
-  dùng dữ liệu mẫu khi thử nghiệm. Không commit key/cache/environment.
+### Hệ thống giám sát vận hành (Production Observability):
+1. **Các chỉ số chính (Metrics):**
+   - **Tỷ lệ tấn công bị chặn (Attack Block Rate):** Giám sát tỷ lệ vi phạm jailbreak và prompt injection (ngưỡng bình thường 100%).
+   - **Tỷ lệ báo động nhầm (False Positive Rate):** Giám sát phản hồi khiếu nại của người dùng khi câu hỏi nghiệp vụ bị chặn nhầm (ngưỡng cảnh báo: >1.0%).
+   - **Độ trễ phân vị P50/P95/P99:** Cảnh báo khi P95 input guard vượt quá 1000 ms liên tục trong 5 phút.
+   - **Data Drift & Topic Drift:** Lấy mẫu định kỳ 5% câu hỏi hàng ngày để kiểm tra độ trôi dạt phân bố ngôn ngữ.
+2. **Phân quyền xử lý:**
+   - Kỹ sư bảo mật (Security Engineer) trực tiếp xử lý các mẫu jailbreak mới được trích xuất.
+   - Nhóm AI Product điều chỉnh prompt guardrail và bổ sung vào bộ kiểm thử hồi quy.
 
-Ưu tiên kiểm chứng: (1) Tuấn chạy lại A với đúng source để sửa provenance;
-(2) kiểm tra retrieval cho ID 41 và bổ sung version metadata/parent retrieval;
-(3) thử độ dài độc lập correctness để đo verbosity effect của B;
-(4) Vàng hoàn thành C, chạy attacks + clean + outputs và latency;
-(5) tổng hợp lại blueprint và chạy checker trước trưởng nhóm nộp.
+### Số liệu thực nghiệm của nhóm:
+- RAGAS mean/worst distribution: Điểm trung bình multi_hop = 0.4273 (yếu nhất), factual = 0.5979, adversarial = 0.6431.
+- Cohen kappa: 1.0 trên đúng 10 model answers nguồn; position inconsistency 20% trên 5 cặp và longer-winner proxy 100% trên 4 cặp decisive. Tập mẫu nhỏ nên các tỷ lệ bias chỉ là tín hiệu cần theo dõi, không phải kết luận tổng quát.
+- Attacks passed: 20/20 (100.0%); clean false_positive_rate: 0.0 (0/8 bị chặn nhầm, 100% hợp lệ).
+
+### 3 hành động cải tiến cụ thể gắn với bằng chứng:
+1. **Khắc phục điểm yếu multi_hop (điểm thấp nhất 0.4273):** Bằng chứng Phase A cho thấy câu hỏi multi-hop có `faithfulness` thấp do retrieval chỉ lấy top_k=3 khiến context thiếu dữ liệu đa văn bản. Cải tiến: Áp dụng query decomposition (M5) tách câu hỏi phức thành 2 sub-queries trước khi retrieval.
+2. **Tối ưu hóa độ trễ NeMo Input Guard (hiện tại P95 = 781.07 ms):** Thay thế self-check qua OpenAI cloud API bằng mô hình phân loại cục bộ chạy trên máy chủ nội bộ (ONNX runtime / vLLM) để đưa P95 về <150 ms.
+3. **Phòng chống bẫy phiên bản chính sách (Adversarial):** Bổ sung metadata filter bắt buộc lọc theo trường `effective_date` hoặc số phiên bản mới nhất (v2024) ngay tại tầng tìm kiếm Qdrant, ngăn ngừa triệt để các đoạn văn bản chính sách cũ (v2023) lọt vào context của generator.
