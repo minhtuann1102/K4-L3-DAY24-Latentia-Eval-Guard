@@ -26,7 +26,7 @@ Request thực dừng sớm khi bị chặn; khác phép đo input layers chạy
    - Kiểm tra các bẫy jailbreak, prompt injection, đóng vai trái phép và các yêu cầu hoàn toàn ngoài phạm vi (`off_topic`).
    - *Failure action:* Khi `activated_rails` có `stop=True`, request dừng ngay lập tức và trả lời thông báo từ chối chính sách (định nghĩa trong `rails.co`).
 3. **Tầng 3 — RAG Pipeline (M1–M5):**
-   - Chỉ truy vấn hợp lệ mới đi vào pipeline hiện có: BM25 retrieval, FlashRank reranking (có fallback lấy kết quả search khi reranker lỗi) và generator. Qdrant có thể chạy trong hạ tầng nhưng source m2 hiện chưa đủ bằng chứng rằng dense/Qdrant retrieval đã được dùng, nên đây không được ghi là tầng đã triển khai.
+   - Source m2 mới đồng bộ có BM25 + dense Qdrant, m3 có CrossEncoder/FlashRank; nguồn và số đo cũ không tự chứng minh mọi lượt trước đã dùng cùng phiên bản pipeline. Chỉ mô tả đường chạy thực tế khi có log/model metadata tương ứng.
 4. **Tầng 4 — NeMo Output Rails:**
    - Kiểm tra câu trả lời sinh ra từ LLM; nếu vô tình tiết lộ PII, thông tin mật khẩu hoặc vi phạm chính sách bảo mật thì tự động redact/thay thế bằng câu từ chối chuẩn.
 5. **Quản lý Secrets & Fallback:**
@@ -100,10 +100,13 @@ Mốc bắt buộc lab vẫn attacks ≥15/20; bonus ≥18/20 kèm clean control
 
 ### Số liệu thực nghiệm của nhóm:
 - RAGAS mean/worst distribution: Điểm trung bình multi_hop = 0.4273 (yếu nhất), factual = 0.5979, adversarial = 0.6431.
-- Cohen kappa: 1.0 trên đúng 10 model answers nguồn; position inconsistency 20% trên 5 cặp và longer-winner proxy 100% trên 4 cặp decisive. Tập mẫu nhỏ nên các tỷ lệ bias chỉ là tín hiệu cần theo dõi, không phải kết luận tổng quát.
+- Cohen kappa: 1.0 trên đúng 10 model answers nguồn; position inconsistency 40% trên 5 cặp và longer-winner proxy 100% trên 3 cặp decisive. Tập mẫu nhỏ nên các tỷ lệ bias chỉ là tín hiệu cần theo dõi, không phải kết luận tổng quát.
 - Attacks passed: 20/20 (100.0%); clean false_positive_rate: 0.0 (0/8 bị chặn nhầm, 100% hợp lệ).
 
 ### 3 hành động cải tiến cụ thể gắn với bằng chứng:
 1. **Khắc phục điểm yếu multi_hop (điểm thấp nhất 0.4273):** Bằng chứng Phase A cho thấy câu hỏi multi-hop có `faithfulness` thấp do retrieval chỉ lấy top_k=3 khiến context thiếu dữ liệu đa văn bản. Cải tiến: Áp dụng query decomposition (M5) tách câu hỏi phức thành 2 sub-queries trước khi retrieval.
 2. **Tối ưu hóa độ trễ NeMo Input Guard (hiện tại P95 = 781.07 ms):** Thay thế self-check qua OpenAI cloud API bằng mô hình phân loại cục bộ chạy trên máy chủ nội bộ (ONNX runtime / vLLM) để đưa P95 về <150 ms.
 3. **Phòng chống bẫy phiên bản chính sách (Adversarial):** Bổ sung metadata filter bắt buộc lọc theo trường `effective_date` hoặc số phiên bản mới nhất (v2024) ngay tại tầng tìm kiếm Qdrant, ngăn ngừa triệt để các đoạn văn bản chính sách cũ (v2023) lọt vào context của generator.
+
+
+Kiểm chứng đóng gói: 131 tests pass, 0 failed checks. Bản Phase B cuối có timestamp `2026-10-12T15:14:31.101132+00:00` và đã đồng bộ báo cáo. Gate SLA full guard vẫn cần benchmark full scope riêng; input P95 781.0743ms không được đổi để vượt target.

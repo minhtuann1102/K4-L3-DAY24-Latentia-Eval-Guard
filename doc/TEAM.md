@@ -8,7 +8,7 @@ Trưởng nhóm/người nộp: Nguyễn Minh Tuấn - MSSV: 2A202602420
 
 Ngày lab/deadline áp dụng: 2026-10-12 23:59 — Asia/Ho_Chi_Minh (UTC+07:00)
 
-Commit dùng để chấm: commit mới nhất trên nhánh main (737ee30).
+Commit dùng để chấm: tag `lab24-done` trên GitHub, trỏ tới commit `Done Lab24`; `git rev-parse lab24-done` trả SHA đầy đủ của bản đã kiểm chứng.
 
 Mỗi nhóm nộp một repo. Điền đủ thành viên và một mục INDIVIDUAL cho từng người.
 Thêm/xóa rows để khớp nhóm thật; mẫu ba rows không ép nhóm phải có ba người.
@@ -38,11 +38,11 @@ Annoy 1.17.3 dùng binary conda-forge, không build bằng MSVC trên máy này.
 `pip check`: No broken requirements found. Bộ runtime đã được kiểm chứng khi
 chuẩn bị môi trường; batch Phase B lần này dùng key trong `.env` và CA Windows,
 không tắt xác minh TLS. Key không nằm trong source, report hoặc commit.
-Metadata live được lưu lúc 12/10/2026 20:18:45 UTC+07:00. Model judge yêu cầu là gpt-4o-mini.
+Metadata live được lưu lúc 12/10/2026 22:14:31 UTC+07:00. Model judge yêu cầu là gpt-4o-mini.
 Mô tả Build Tools ở môi trường chung phía trên không phải bằng chứng máy Thắng
 đã cài compiler. Kiến trúc pipeline hiện tại và giới hạn A/C xem blueprint/review.
 
-Trạng thái đóng gói: Cả 3 Phase A, B, C và Task 13 (Blueprint) đã hoàn thành 100%. Tất cả 4 artifacts JSON và 3 báo cáo Markdown đã được tạo và đối chiếu chính xác qua script check_lab.py --with-tests (120/120 tests passed, 0 failed). Repo sẵn sàng nộp link.
+Trạng thái đóng gói: Cả 3 Phase A, B, C và Task 13 (Blueprint) đã hoàn thành 100%. Tất cả 4 artifacts JSON và 3 báo cáo Markdown đã được tạo và đối chiếu chính xác qua script check_lab.py --with-tests (131/131 tests passed, 0 failed). Repo sẵn sàng nộp link.
 
 ## INDIVIDUAL
 
@@ -62,11 +62,11 @@ Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
 **Nguyễn Minh Thắng — MSSV 2A202602706.**
 
 - Phần được giao và thực tế đã làm: Hoàn thành Phase B Tasks 5–8; kiểm thử JSON judge, swap winner/scores, Cohen κ và bias proxies; chạy batch live, viết bias_report.md và tổng hợp blueprint/submission review.
-- Bằng chứng: 4 commit theo task (488244f, 0d5f510, 09dbb98, e25635b), test fe68869, docs 06025b1 trên PR #1 đã merge; artifacts/judge_results.json với timestamp 2026-10-12T13:18:45.107165+00:00. Báo cáo ghi tên Nguyễn Minh Thắng và đúng source hashes.
-- Cách kiểm tra: 42 tests Phase B và 102 tests Phase B/helper/contracts pass offline; một batch live gồm 10 pairwise calls và 10 binary judgments. Artifact live qua schema, source ids, metadata/hashes và phép tính. Checker toàn nhóm còn lỗi A/C, không khai toàn repo đã pass.
+- Bằng chứng: 4 commit theo task (488244f, 0d5f510, 09dbb98, e25635b), test fe68869, docs 06025b1 trên PR #1 đã merge; artifacts/judge_results.json với timestamp 2026-10-12T15:14:31.101132+00:00. Báo cáo ghi tên Nguyễn Minh Thắng và đúng source hashes.
+- Cách kiểm tra: 42 tests Phase B và 102 tests Phase B/helper/contracts pass offline; một batch live gồm 10 pairwise calls và 10 binary judgments. Artifact live qua schema, source ids, metadata/hashes và phép tính. Kiểm tra cuối toàn nhóm có 131 tests pass, 3 integration tests deselected và 0 failed checks.
 - Kết quả: κ=1.0, agreement 10/10; position inconsistency 2/5 (40%); longer-answer win proxy 3/3 decisive (100%). Proxy không chứng minh nguyên nhân bias, reasoning còn cần review dù label khớp.
 - Điều đã học: Quy đổi hai lượt về cùng A/B gốc; calibration đánh giá đúng model_answer của fixture; phân biệt agreement, reasoning quality và vị trí/độ dài là confound; không dùng pairwise winner thay nhãn tốt/xấu.
-- Giới hạn/cách xử lý: Mẫu 5 cặp/10 nhãn nhỏ; đọc ID 12/41 và các reasoning suy thêm điều kiện. Sau đó Tuấn và Vàng đã hoàn thành đồng bộ Phase A và Phase C, toàn bộ repo đã khớp 100% và đạt 120/120 tests pass.
+- Giới hạn/cách xử lý: Mẫu 5 cặp/10 nhãn nhỏ; đọc ID 12/41 và các reasoning suy thêm điều kiện. Sau đó Tuấn và Vàng đã hoàn thành đồng bộ Phase A và Phase C, toàn bộ repo đã khớp 100% và đạt 131/131 tests pass.
 - Nguồn/AI hỗ trợ: README, đề bài/rubric/scaffold của repo; Codex hỗ trợ implementation, kiểm thử biên song song, chạy API và phân tích JSON thật. Mock chỉ phục vụ test, không được khai là live evidence.
 
 ### NguyenThiVang-2A202602897
@@ -81,3 +81,13 @@ Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
 ## Cập nhật sau khi nộp
 
 Chưa ghi nhận lần nộp chính thức. Trưởng nhóm chọn commit SHA đã qua checks trước deadline; nếu sửa sau khi nộp, ghi SHA/thời điểm/lý do và điều kiện coach cho phép.
+
+
+### Hoàn tất Done Lab24 — Nguyễn Minh Thắng
+
+Đồng bộ kết quả cuối của Tuấn/Vàng, cố định bytes của 6 nguồn JSON để hashes gốc
+khớp trên mọi checkout, nối adapter config cho m4/m5 và bỏ synthetic fallback của
+live RAGAS. Không chỉnh điểm/số đo A/C hoặc expected hashes. Chạy lại B thật và
+đối chiếu các báo cáo theo artifact mới. Cả năm module RAG import thành công;
+131 tests pass và checker toàn repo 0 failed checks. Các số P95 vượt budget và
+giới hạn tập mẫu vẫn được giữ đúng; chưa có bằng chứng gửi bài qua vlearn.

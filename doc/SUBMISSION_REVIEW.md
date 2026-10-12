@@ -38,10 +38,10 @@ Không nộp virtualenv, model cache, compiler/Conda installer hoặc key.
    - Chạy RAGAS qua `python scripts/run_experiments.py --phase a --live` sinh `artifacts/ragas_50q.json`.
 
 2. **Phase B (Nguyễn Minh Thắng):**
-   - Một batch live `python scripts/run_experiments.py --phase b --live`, artifact timestamp `2026-10-12T13:18:45.107165+00:00`. Model judge yêu cầu: gpt-4o-mini.
+   - Một batch live `python scripts/run_experiments.py --phase b --live`, artifact timestamp `2026-10-12T15:14:31.101132+00:00`. Model judge yêu cầu: gpt-4o-mini.
    - Agreement 10/10; p_o=1, p_e=0.52, **Cohen κ=1.0**.
-   - Position inconsistency **1/5=20%** (ID 41 tie sau swap-and-average).
-   - Longer-answer win proxy **4/4 decisive**; artifact và báo cáo khớp chính xác.
+   - Position inconsistency **2/5=40%** (IDs 12 và 41).
+   - Longer-answer win proxy **3/3 decisive**; artifact và báo cáo khớp chính xác.
 
 3. **Phase C (Nguyễn Thị Vàng):**
    - Chạy live `python scripts/run_experiments.py --phase c --live --latency-samples 20`.
@@ -56,7 +56,7 @@ Lệnh kiểm tra chính thức:
 python scripts/check_lab.py --with-tests
 ```
 
-Kết quả: **120 tests pass, 0 failed checks (100% PASS)**:
+Kết quả: **131 tests pass, 0 failed checks (100% PASS)**:
 - PASS README.md, doc/ASSIGNMENT.md, doc/SUBMISSION.md, doc/CHECKPOINTS.md, doc/RULES.md, doc/RUBRIC.md, doc/ENVIRONMENT.md, doc/PIPELINE_INTERFACE.md, doc/REPORT_SCHEMAS.md
 - PASS doc/TEAM.md
 - PASS doc/reports/failure_clusters.md
@@ -65,10 +65,22 @@ Kết quả: **120 tests pass, 0 failed checks (100% PASS)**:
 - PASS m1_chunking.py, m2_search.py, m3_rerank.py, m4_eval.py, m5_enrichment.py
 - PASS phase_a_ragas.py, phase_b_judge.py, phase_c_guard.py
 - PASS answers_50q.json, Phase A artifact, Phase B artifact, Phase C artifact
-- PASS offline pytest: 120 passed, 3 deselected in 3.50s.
+- PASS offline pytest: 131 passed, 3 deselected.
 
 ## Trạng thái trước nộp bài
 
 - Toàn bộ source code, 4 artifacts JSON và 3 báo cáo Markdown kèm `TEAM.md` đã sẵn sàng 100%.
 - Không có secret/API key trong repo.
 - Nhóm sẵn sàng nộp link repo GitHub `https://github.com/minhtuann1102/K4-L3-DAY24-Latentia-Eval-Guard` trước deadline 23:59.
+
+
+## Kiểm chứng bản Done Lab24
+
+Nguyễn Minh Thắng đã phục hồi chính xác CRLF của các nguồn JSON được hash ở các
+lượt gốc; JSON values không đổi, không sửa hashes/metric của A/C. `.gitattributes`
+giữ nguyên bytes các nguồn khi checkout, giải quyết lệch LF/CRLF trên Windows/Linux.
+Batch B đã chạy lại trên nguồn cuối và báo cáo đã đồng bộ. Hai lỗi import m4/m5
+từ code Day18 mới đồng bộ được sửa bằng adapter config; live RAGAS sẽ báo lỗi
+nếu API/metric lỗi, không dùng lexical proxy hoặc thay NaN bằng 0 làm điểm live.
+131 tests pass, 0 failed checks và cả năm module import được. Tag lab24-done đánh
+dấu commit Done Lab24 để người nộp/người chấm truy đúng SHA của bản đã kiểm chứng.
