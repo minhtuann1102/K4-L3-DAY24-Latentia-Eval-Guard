@@ -1,0 +1,12 @@
+*.py text eol=lf
+*.md text eol=lf
+artifacts/*.json text eol=lf
+
+# These evidence inputs were hashed with CRLF by the original live runs.
+# Preserve their exact bytes on every platform; do not normalize on add/checkout.
+artifacts/answers_50q.json -text whitespace=trailing-space,space-before-tab,cr-at-eol
+fixtures/test_set_50q.json -text whitespace=trailing-space,space-before-tab,cr-at-eol
+fixtures/human_labels_10q.json -text whitespace=trailing-space,space-before-tab,cr-at-eol
+fixtures/adversarial_set_20.json -text whitespace=trailing-space,space-before-tab,cr-at-eol
+fixtures/clean_set_8.json -text whitespace=trailing-space,space-before-tab,cr-at-eol
+fixtures/output_set_4.json -text whitespace=trailing-space,space-before-tab,cr-at-eol

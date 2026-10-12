@@ -48,6 +48,14 @@ PAIR_QUESTION_IDS = (1, 5, 12, 21, 41)
 GENERATION_MODEL = "gpt-4o-mini"
 JUDGE_MODEL = "gpt-4o-mini"
 
+
+def get_llm_client():
+    """Day18 enrichment adapter using the configured Day24 provider/model."""
+    if not OPENAI_API_KEY:
+        return None, GENERATION_MODEL
+    from openai import OpenAI
+    return OpenAI(), GENERATION_MODEL
+
 # --- Guardrail latency budget ---
 LATENCY_BUDGET_P95_MS = 500  # Full guard target; Task 12 currently measures input guards only.
 PRESIDIO_LANGUAGE = "en"    # Presidio base language; custom VN recognizers added via PatternRecognizer
