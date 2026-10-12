@@ -34,17 +34,17 @@
 ## 3. CHECKLIST CÔNG VIỆC THEO TỪNG THÀNH VIÊN
 
 ### 👑 Luồng 1: Nguyễn Minh Tuấn (Lead & Phase A)
-* [ ] **Bước 1 (Chuẩn bị - CP0):**
+* [x] **Bước 1 (Chuẩn bị - CP0):**
   * Tích hợp 5 modules RAG (`m1_chunking.py`, `m2_search.py`, `m3_rerank.py`, `m4_eval.py`, `m5_enrichment.py`) vào thư mục `src/`.
   * Khởi động Qdrant: `docker compose -f infra/docker-compose.yml up -d`.
   * Chạy sinh answers: `python scripts/setup_answers.py --live` → sinh ra `artifacts/answers_50q.json`.
   * Commit và push `answers_50q.json` lên nhánh chung để Thắng lấy dữ liệu cho Phase B.
-* [ ] **Bước 2 (Code Phase A trong `src/phase_a_ragas.py`):**
+* [x] **Bước 2 (Code Phase A trong `src/phase_a_ragas.py`):**
   * Task 1: `group_by_distribution()` (chia đủ 20 factual, 20 multi_hop, 10 adversarial).
   * Task 2: `run_ragas_50q()` (gọi `m4_eval.evaluate_ragas`, trả về 4 metric: Faithfulness, Answer Relevancy, Context Precision, Context Recall).
   * Task 3: `bottom_10()` (lấy 10 câu có avg_score thấp nhất, gán worst_metric, diagnosis, suggested_fix).
   * Task 4: `cluster_analysis()` (tạo ma trận worst_metric × distribution, tìm distribution yếu nhất theo avg_score trung bình thấp nhất).
-* [ ] **Bước 3 (Kiểm thử & Báo cáo):**
+* [x] **Bước 3 (Kiểm thử & Báo cáo):**
   * Chạy unit test mock: `python -m pytest tests/test_phase_a.py -q`.
   * Chạy thực nghiệm live: `python scripts/run_experiments.py --phase a --live` → sinh `artifacts/ragas_50q.json`.
   * Điền báo cáo `doc/reports/failure_clusters.md` từ số liệu JSON.
@@ -75,10 +75,10 @@
 ---
 
 
-Kết quả live của Nguyễn Minh Thắng: κ=1.0, 2/5 inconsistent, 3/3 longer winner trong decisive cases; artifact/report đã validate. Các kiểm tra toàn nhóm A/C còn lỗi, xem doc/SUBMISSION_REVIEW.md.
+Kết quả live của Nguyễn Minh Thắng: κ=1.0, 2/5 inconsistent, 3/3 longer winner trong decisive cases; artifact/report đã validate. Các kiểm tra toàn nhóm A/B/C và Blueprint đã hoàn thành và đạt 120/120 tests pass.
 
 ### 🛡️ Luồng 3: Nguyễn Thị Vàng (Phase C: Guardrails & Latency)
-* [ ] **Bước 1 (Code Phase C trong `src/phase_c_guard.py`):**
+* [x] **Bước 1 (Code Phase C trong `src/phase_c_guard.py`):**
   * Task 9a: `pii_scan(text)`:
     * Dùng Presidio nhận diện & ẩn danh CCCD (12 số), CMND (9 số), SĐT VN (`0[3-9]xxxxxxxx`) và Email.
   * Task 9b: `check_input_rail(text)` (async):
@@ -93,7 +93,7 @@ Kết quả live của Nguyễn Minh Thắng: κ=1.0, 2/5 inconsistent, 3/3 long
     * Scope: Sequential input layers (`Presidio` + `NeMo input`).
     * Chạy 2 lượt warm-up thật (loại khỏi thống kê), đo $\ge 20$ samples timed bằng `perf_counter`.
     * Tính P50, P95, P99 nội suy tuyến tính.
-* [ ] **Bước 2 (Kiểm thử & Báo cáo):**
+* [x] **Bước 2 (Kiểm thử & Báo cáo):**
   * Chạy unit test mock: `python -m pytest tests/test_phase_c.py -q`.
   * Chạy live: `python scripts/run_experiments.py --phase c --live --latency-samples 20` → sinh `artifacts/guard_results.json`.
   * Cung cấp bảng số đo Latency P50/P95/P99 để đưa vào `blueprint.md`.

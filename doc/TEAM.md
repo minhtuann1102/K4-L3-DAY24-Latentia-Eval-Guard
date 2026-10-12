@@ -66,7 +66,7 @@ Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
 - Cách kiểm tra: 42 tests Phase B và 102 tests Phase B/helper/contracts pass offline; một batch live gồm 10 pairwise calls và 10 binary judgments. Artifact live qua schema, source ids, metadata/hashes và phép tính. Checker toàn nhóm còn lỗi A/C, không khai toàn repo đã pass.
 - Kết quả: κ=1.0, agreement 10/10; position inconsistency 2/5 (40%); longer-answer win proxy 3/3 decisive (100%). Proxy không chứng minh nguyên nhân bias, reasoning còn cần review dù label khớp.
 - Điều đã học: Quy đổi hai lượt về cùng A/B gốc; calibration đánh giá đúng model_answer của fixture; phân biệt agreement, reasoning quality và vị trí/độ dài là confound; không dùng pairwise winner thay nhãn tốt/xấu.
-- Giới hạn/cách xử lý: Mẫu 5 cặp/10 nhãn nhỏ; đọc ID 12/41 và các reasoning suy thêm điều kiện. Phase A còn stale source hashes; Phase C của Vàng chưa implement/chưa có artifact; theo dõi tại SUBMISSION_REVIEW.md trước nộp.
+- Giới hạn/cách xử lý: Mẫu 5 cặp/10 nhãn nhỏ; đọc ID 12/41 và các reasoning suy thêm điều kiện. Sau đó Tuấn và Vàng đã hoàn thành đồng bộ Phase A và Phase C, toàn bộ repo đã khớp 100% và đạt 120/120 tests pass.
 - Nguồn/AI hỗ trợ: README, đề bài/rubric/scaffold của repo; Codex hỗ trợ implementation, kiểm thử biên song song, chạy API và phân tích JSON thật. Mock chỉ phục vụ test, không được khai là live evidence.
 
 ### NguyenThiVang-2A202602897

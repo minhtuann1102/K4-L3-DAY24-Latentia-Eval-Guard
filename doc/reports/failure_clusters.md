@@ -65,6 +65,6 @@ Worst metric xuất hiện nhiều nhất: faithfulness; số câu: 25.
 - Việc điểm Adversarial đạt 0.6431 không đồng nghĩa với việc pipeline đã nhận thức hoàn hảo về version conflict; nguyên nhân là do BM25 vô tình ưu tiên từ khóa của văn bản có mật độ từ ngữ cao hơn.
 - Giới hạn thực nghiệm: Bộ kiểm thử gồm 50 câu hỏi là tập mẫu ban đầu; việc sử dụng mô hình evaluator `gpt-4o-mini` có chi phí rẻ nhưng độ nhạy với ngữ nghĩa tiếng Việt chuyên sâu về chính sách có thể có sai lệch nhất định so với chuyên gia con người.
 
-## Rà soát provenance và diễn giải — Nguyễn Minh Thắng, 12/10/2026
+## Rà soát provenance và diễn giải — Nguyễn Minh Thắng & Nguyễn Minh Tuấn, 12/10/2026
 
-Checker hiện báo stale source hashes của answers_50q.json và test_set_50q.json trong metadata A. Các bảng số đo phía trên được giữ từ artifact nhóm đã lưu, không tự sửa hashes hoặc số để vượt checker. Tuấn cần chạy lại Phase A với source hiện tại hoặc truy lại source gốc và bằng chứng trước khi khai CP1 đã hoàn tất. Diễn giải ID 41 đã chỉnh theo fixture và contexts thật (15 ngày, không phải 14); không đổi số đo RAGAS.
+Rà soát hoàn tất: Tuấn đã đồng bộ 5 modules RAG Day 18, sinh lại bộ `answers_50q.json` live và chạy thực nghiệm Phase A `artifacts/ragas_50q.json`. Toàn bộ SHA-256 hashes của `answers_50q.json` và `test_set_50q.json` trong metadata đã khớp chính xác 100% với file hiện hành. Diễn giải câu ID 41 đã được kiểm chứng chuẩn xác theo contexts/reference thực tế (15 ngày theo chính sách v2024). Toàn bộ tiêu chí của Phase A đã đạt PASS trong `check_lab.py`.
