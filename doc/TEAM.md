@@ -8,7 +8,7 @@ Trưởng nhóm/người nộp: Nguyễn Minh Tuấn - MSSV: 2A202602420
 
 Ngày lab/deadline áp dụng: 2026-10-12 23:59 — Asia/Ho_Chi_Minh (UTC+07:00)
 
-Commit dùng để chấm: 9dec54fc11e0a07d3ed9e22327a384c17dfbc1b6 (nhánh main).
+Commit dùng để chấm: commit mới nhất trên nhánh main (737ee30).
 
 Mỗi nhóm nộp một repo. Điền đủ thành viên và một mục INDIVIDUAL cho từng người.
 Thêm/xóa rows để khớp nhóm thật; mẫu ba rows không ép nhóm phải có ba người.
